@@ -1,0 +1,12 @@
+{
+  "name": "clavier-sonore",
+  "version": "1.0.0",
+  "description": "Clavier sonore interactif duo — EN / FR / AR",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ws": "^8.16.0"
+  }
+}

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clavier Sonore</title>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%; height: 100%;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Helvetica Neue', Helvetica, sans-serif;
+  }
+  .wrap {
+    text-align: center;
+    color: #fff;
+  }
+  h1 {
+    font-size: clamp(18px, 3vw, 28px);
+    font-weight: 300;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 3rem;
+    color: #888;
+  }
+  .btns {
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  a {
+    display: block;
+    padding: 18px 40px;
+    border: 1px solid #333;
+    border-radius: 6px;
+    color: #fff;
+    text-decoration: none;
+    font-size: 14px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  a:hover { border-color: #fff; }
+  .sub {
+    margin-top: 0.6rem;
+    font-size: 11px;
+    color: #444;
+    letter-spacing: 0.05em;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Clavier Sonore</h1>
+  <div class="btns">
+    <div>
+      <a href="/joueur1.html">Joueur 1</a>
+      <div class="sub">EN · FR · AR</div>
+    </div>
+    <div>
+      <a href="/joueur2.html">Joueur 2</a>
+      <div class="sub">EN · FR · AR</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
