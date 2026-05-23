@@ -92,7 +92,7 @@ function shuffle(arr) {
   return a;
 }
 
-// Synthèse vocale
+// ── Synthèse vocale ──────────────────────────────────────────
 const synth = window.speechSynthesis;
 let voices = [];
 function loadVoices() { voices = synth.getVoices(); }
@@ -119,8 +119,8 @@ function speakEntry(entry) {
   synth.speak(utt);
 }
 
-// WebSocket — connexion sécurisée (wss) si HTTPS, sinon ws
-function makeWS(player, onMessage) {
+// ── WebSocket ────────────────────────────────────────────────
+function makeWS(onMessage) {
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
   const url = `${proto}://${location.host}`;
   const dot = document.getElementById('dot');
@@ -131,30 +131,95 @@ function makeWS(player, onMessage) {
     ws.onopen  = () => { if (dot) dot.className = 'on'; };
     ws.onclose = () => { if (dot) dot.className = 'off'; setTimeout(connect, 2000); };
     ws.onerror = () => ws.close();
-    ws.onmessage = e => {
-      try { onMessage(JSON.parse(e.data)); } catch {}
-    };
+    ws.onmessage = e => { try { onMessage(JSON.parse(e.data)); } catch {} };
   }
 
   connect();
-
-  return {
-    send(obj) {
-      if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj));
-    }
-  };
+  return { send(obj) { if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj)); } };
 }
 
-// Construction de la grille
+// ── Curseur fantôme ──────────────────────────────────────────
+function createGhostCursor() {
+  const el = document.createElement('div');
+  el.id = 'ghost-cursor';
+  // SVG main/doigt à 80% d'opacité
+  el.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M9 11V6a2 2 0 1 1 4 0v5"/>
+    <path d="M13 10a2 2 0 1 1 4 0v3"/>
+    <path d="M17 12a2 2 0 1 1 4 0v3a6 6 0 0 1-6 6h-2a6 6 0 0 1-6-6V9a2 2 0 1 1 4 0"/>
+  </svg>`;
+  el.style.cssText = `
+    position: fixed;
+    top: 0; left: 0;
+    pointer-events: none;
+    opacity: 0.8;
+    transform: translate(-4px, -4px);
+    transition: transform 0.06s linear, left 0.06s linear, top 0.06s linear;
+    z-index: 1000;
+    display: none;
+  `;
+  document.body.appendChild(el);
+  return el;
+}
+
+// ── Grille + touches + flash ─────────────────────────────────
+function ghostKey(keys, idx) {
+  const key = keys[idx];
+  if (!key) return;
+  key.classList.add('ghost');
+  const flash = document.createElement('div');
+  flash.className = 'flash ghost-flash';
+  key.appendChild(flash);
+  setTimeout(() => { flash.remove(); key.classList.remove('ghost'); }, 500);
+}
+
+// ── Point d'entrée ───────────────────────────────────────────
 function buildGrid(player) {
   const shuffled = shuffle(LETTERS);
   const grid = document.getElementById('grid');
   const keys = [];
+  const ghost = createGhostCursor();
+  let ghostVisible = false;
+  let hideTimer;
 
-  const ws = makeWS(player, msg => {
-    if (msg.from !== player) ghostKey(keys, msg.index);
+  // Réception des messages
+  const ws = makeWS(msg => {
+    if (msg.from === player) return;
+
+    if (msg.type === 'cursor') {
+      // Positionne le curseur fantôme (coordonnées normalisées 0-1)
+      const x = msg.x * window.innerWidth;
+      const y = msg.y * window.innerHeight;
+      ghost.style.left = x + 'px';
+      ghost.style.top  = y + 'px';
+      ghost.style.display = 'block';
+      clearTimeout(hideTimer);
+      hideTimer = setTimeout(() => { ghost.style.display = 'none'; }, 3000);
+
+    } else if (msg.type === 'tap') {
+      ghostKey(keys, msg.index);
+    }
   });
 
+  // Envoi de la position souris (throttle ~30fps)
+  let lastMove = 0;
+  function sendCursor(x, y) {
+    const now = Date.now();
+    if (now - lastMove < 33) return;
+    lastMove = now;
+    ws.send({ from: player, type: 'cursor', x: x / window.innerWidth, y: y / window.innerHeight });
+  }
+
+  document.addEventListener('mousemove', e => sendCursor(e.clientX, e.clientY));
+
+  // Touch : premier doigt seulement
+  document.addEventListener('touchmove', e => {
+    if (e.touches.length > 0) {
+      sendCursor(e.touches[0].clientX, e.touches[0].clientY);
+    }
+  }, { passive: true });
+
+  // Construction des 80 touches
   for (let i = 0; i < 80; i++) {
     const key = document.createElement('div');
     key.className = 'key';
@@ -169,7 +234,7 @@ function buildGrid(player) {
       key.appendChild(flash);
       setTimeout(() => { flash.remove(); key.classList.remove('active'); }, 300);
       speakEntry(shuffled[i]);
-      ws.send({ from: player, index: i });
+      ws.send({ from: player, type: 'tap', index: i });
     };
 
     key.addEventListener('click', activate);
@@ -180,14 +245,4 @@ function buildGrid(player) {
     grid.appendChild(key);
     keys.push(key);
   }
-}
-
-function ghostKey(keys, idx) {
-  const key = keys[idx];
-  if (!key) return;
-  key.classList.add('ghost');
-  const flash = document.createElement('div');
-  flash.className = 'flash ghost-flash';
-  key.appendChild(flash);
-  setTimeout(() => { flash.remove(); key.classList.remove('ghost'); }, 500);
 }
