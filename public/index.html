@@ -3,9 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dialogue pour deux surfaces</title>
+<title>Dialogue pour 2 Surfaces</title>
 <style>
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
   html, body {
     width: 100%; height: 100%;
     background: #000;
@@ -13,59 +14,279 @@
     align-items: center;
     justify-content: center;
     font-family: 'Helvetica Neue', Helvetica, sans-serif;
-  }
-  .wrap {
-    text-align: center;
     color: #fff;
   }
+
+  .wrap { text-align: center; }
+
   h1 {
-    font-size: clamp(18px, 3vw, 28px);
+    font-size: clamp(16px, 2.5vw, 22px);
     font-weight: 300;
     letter-spacing: 0.2em;
     text-transform: uppercase;
+    color: #ccc;
     margin-bottom: 3rem;
-    color: #888;
+    line-height: 1.8;
   }
+  h1 span {
+    display: block;
+    font-size: clamp(11px, 1.4vw, 14px);
+    color: #888;
+    letter-spacing: 0.12em;
+    margin-top: 0.5rem;
+    font-style: italic;
+    text-transform: none;
+  }
+
   .btns {
     display: flex;
-    gap: 24px;
+    gap: 20px;
     justify-content: center;
     flex-wrap: wrap;
+    align-items: flex-start;
   }
-  a {
+
+  .player-btn {
     display: block;
-    padding: 18px 40px;
-    border: 1px solid #333;
-    border-radius: 6px;
+    padding: 16px 36px;
+    border: 1px solid #555;
+    border-radius: 4px;
     color: #fff;
     text-decoration: none;
-    font-size: 14px;
-    letter-spacing: 0.15em;
+    font-size: 13px;
+    letter-spacing: 0.2em;
     text-transform: uppercase;
-    transition: border-color 0.2s, color 0.2s;
+    transition: border-color 0.2s, background 0.2s;
   }
-  a:hover { border-color: #fff; }
+  .player-btn:hover { border-color: #fff; background: #0d0d0d; }
+
   .sub {
     margin-top: 0.6rem;
     font-size: 11px;
-    color: #444;
-    letter-spacing: 0.05em;
+    color: #888;
+    letter-spacing: 0.1em;
+  }
+
+  /* ── Bouton ? ── */
+  .info-btn {
+    position: fixed;
+    bottom: 22px;
+    right: 26px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid #777;
+    background: transparent;
+    color: #ccc;
+    font-size: 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.2s, color 0.2s;
+    font-family: Georgia, serif;
+    font-style: italic;
+  }
+  .info-btn:hover { border-color: #fff; color: #fff; }
+
+  /* ── Overlay ── */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    pointer-events: none;
+    transition: background 0.4s;
+  }
+  .overlay.open {
+    background: rgba(0,0,0,0.92);
+    pointer-events: all;
+  }
+
+  /* ── Modal ── */
+  .modal {
+    max-width: 620px;
+    width: 92%;
+    border: 1px solid #444;
+    border-radius: 4px;
+    padding: 2.8rem 3.2rem;
+    background: #0a0a0a;
+    position: relative;
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+  .overlay.open .modal {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .modal-close {
+    position: absolute;
+    top: 14px;
+    right: 18px;
+    background: transparent;
+    border: none;
+    color: #aaa;
+    font-size: 22px;
+    cursor: pointer;
+    line-height: 1;
+    transition: color 0.2s;
+    padding: 4px 8px;
+  }
+  .modal-close:hover { color: #fff; }
+
+  /* ── Onglets ── */
+  .lang-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid #333;
+  }
+  .lang-tab {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid transparent;
+    margin-bottom: -1px;
+    padding: 6px 20px 10px;
+    color: #777;
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+    font-family: inherit;
+  }
+  .lang-tab:hover { color: #ccc; }
+  .lang-tab.active { color: #fff; border-bottom-color: #fff; }
+
+  /* ── Contenu modal ── */
+  .modal-content { display: none; }
+  .modal-content.active { display: block; }
+
+  .modal-title {
+    font-size: clamp(14px, 1.8vw, 17px);
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #fff;
+    line-height: 1.6;
+    margin-bottom: 0.4rem;
+  }
+
+  .modal-meta {
+    font-size: 12px;
+    color: #888;
+    letter-spacing: 0.08em;
+    margin-bottom: 1.8rem;
+    line-height: 1.8;
+  }
+
+  .modal-rule {
+    width: 32px;
+    height: 1px;
+    background: #333;
+    margin: 1.6rem 0;
+  }
+
+  .modal-body {
+    font-size: clamp(13px, 1.4vw, 14px);
+    color: #bbb;
+    line-height: 2;
+    font-weight: 300;
+    letter-spacing: 0.02em;
   }
 </style>
 </head>
 <body>
+
 <div class="wrap">
-  <h1>Dialogue pour deux surfaces @Collectif 1.0.3_2026</h1>
+  <h1>
+    Dialogue pour 2 Surfaces
+    <span>ou de la contrainte du jeu vers l'instrumental</span>
+  </h1>
   <div class="btns">
     <div>
-      <a href="/joueur1.html">Joueur 1</a>
+      <a class="player-btn" href="/joueur1.html">Surface 1</a>
       <div class="sub">EN · FR · AR</div>
     </div>
     <div>
-      <a href="/joueur2.html">Joueur 2</a>
+      <a class="player-btn" href="/joueur2.html">Surface 2</a>
       <div class="sub">EN · FR · AR</div>
     </div>
   </div>
 </div>
+
+<button class="info-btn" onclick="openModal()" aria-label="À propos">?</button>
+
+<div class="overlay" id="overlay" onclick="handleOverlayClick(event)">
+  <div class="modal" role="dialog" aria-modal="true">
+    <button class="modal-close" onclick="closeModal()" aria-label="Fermer">×</button>
+
+    <div class="lang-tabs">
+      <button class="lang-tab active" onclick="switchLang('fr', this)">FR</button>
+      <button class="lang-tab" onclick="switchLang('en', this)">EN</button>
+    </div>
+
+    <!-- Français -->
+    <div class="modal-content active" id="content-fr">
+      <div class="modal-title">Dialogue pour 2 Surfaces</div>
+      <div class="modal-meta">HEAD — Genève, 2003 &nbsp;·&nbsp; Installation multimédia</div>
+      <div class="modal-rule"></div>
+      <div class="modal-body">
+        Entre instrument numérique (sampler) et objet ludique (jeu de Memory), cette installation reconstitue visuellement dans l'espace le dispositif minimum d'une interface numérique. Elle se joue à deux, de part et d'autre d'un écran.
+        <br><br>
+        « Dialogue pour deux surfaces » permet d'engager une rencontre à la surface de l'écran, grâce aux unités de base du langage — phonèmes de l'alphabet romain, interprétés en trois langues : français, arabe et américain. Chaque langue est synthétisée dans un format sonore particulier.
+        <br><br>
+        Les « joueurs » peuvent improviser un dialogue, composé de sigles, de cadences et de rythmes. Cette proposition nous révèle les différentes modalités d'approche d'une interface numérique tout en nous invitant à construire de façon aléatoire une composition poétique.
+      </div>
+    </div>
+
+    <!-- English -->
+    <div class="modal-content" id="content-en">
+      <div class="modal-title">Dialogue for 2 Surfaces</div>
+      <div class="modal-meta">HEAD — Geneva, 2003 &nbsp;·&nbsp; Multimedia installation</div>
+      <div class="modal-rule"></div>
+      <div class="modal-body">
+        Part digital instrument (sampler), part play object (Memory game), this installation visually reconstitutes in space the minimal device of a digital interface. It is played by two players, on either side of a screen.
+        <br><br>
+        "Dialogue pour deux surfaces" allows you to initiate an encounter on the surface of the screen, using the basic units of language — phonemes of the Roman alphabet, interpreted in three languages: French, Arabic and American. Each language is synthesized in a specific sound format.
+        <br><br>
+        The "players" can improvise a dialogue made up of acronyms, cadences and rhythms. This proposition reveals the different ways of approaching a digital interface, while inviting us to randomly construct a poetic composition.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const overlay = document.getElementById('overlay');
+
+  function openModal() {
+    overlay.classList.add('open');
+    document.addEventListener('keydown', onKey);
+  }
+  function closeModal() {
+    overlay.classList.remove('open');
+    document.removeEventListener('keydown', onKey);
+  }
+  function handleOverlayClick(e) {
+    if (e.target === overlay) closeModal();
+  }
+  function onKey(e) {
+    if (e.key === 'Escape') closeModal();
+  }
+  function switchLang(lang, btn) {
+    document.querySelectorAll('.lang-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.modal-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('content-' + lang).classList.add('active');
+  }
+</script>
 </body>
 </html>
